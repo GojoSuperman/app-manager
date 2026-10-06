@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="launcher-token" content="__LAUNCHER_TOKEN__">
+<title>앱 관리 프로젝트</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <span class="logo">🚀 앱 관리 프로젝트</span>
+  <input id="search" type="search" placeholder="🔍 앱 검색 (이름·설명·분류)" autocomplete="off">
+  <button id="gh-import" class="ghost" title="내 GitHub 저장소에서 골라 카드로 만들기 (gh 로그인 필요)">⬇ GitHub에서 가져오기</button>
+  <button id="add" class="primary">＋ 앱 추가</button>
+  <button id="quit" class="ghost" title="런처 서버를 끕니다">런처 종료</button>
+</header>
+<div id="warning" class="warning" hidden></div>
+<nav id="chips" class="chips"></nav>
+<main id="grid" class="grid"></main>
+<p id="empty" class="empty" hidden></p>
+<div id="toast" class="toast" hidden></div>
+<dialog id="dialog"></dialog>
+<section id="console" class="console-drawer">
+  <div class="console-bar">
+    <span id="console-title" class="console-title"></span>
+    <button id="console-toggle" class="console-collapse" type="button" title="접기/펼치기">▾</button>
+  </div>
+  <pre id="console-pane" class="console-pane"></pre>
+</section>
+<script type="module" src="/app.js"></script>
+<script type="module" src="/console.js"></script>
+</body>
+</html>

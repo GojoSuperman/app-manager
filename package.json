@@ -1,0 +1,16 @@
+{
+  "name": "app-manager",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "앱 관리 프로젝트 — 직접 만든 앱과 결과물을 카드 한 화면에 모아 실행하는 런처",
+  "scripts": {
+    "start": "node server/index.js",
+    "demo": "node scripts/demo.mjs",
+    "test": "node --test 'test/**/*.test.js'"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

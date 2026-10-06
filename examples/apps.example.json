@@ -1,0 +1,26 @@
+{
+  "categories": ["개발"],
+  "apps": [
+    { "name": "할 일 메모", "description": "오늘 할 일을 적고 지우는 간단한 웹앱", "category": "도구",
+      "launch": { "type": "url", "url": "https://example.com/todo" }, "thumbnailFile": "thumbs/todo.png" },
+    { "name": "날씨 대시보드", "description": "빌드 없이 여는 정적 사이트 — '로컬 웹' 실행 방법 예시 (예시 데이터)", "category": "도구",
+      "launch": { "type": "local-web", "dir": "sites/weather", "entry": "index.html" }, "thumbnailFile": "thumbs/weather.png" },
+    { "name": "블록 퍼즐", "description": "Windows 게임 실행 예시", "category": "게임",
+      "launch": { "type": "windows", "file": "C:\\Games\\BlockPuzzle\\puzzle.exe", "args": [], "cwd": null }, "thumbnailFile": "thumbs/puzzle.png" },
+    { "name": "바다로 가는 길", "description": "지역 홍보 영상 공모전 출품작 — 결과물 파일을 여는 카드", "category": "공모전",
+      "launch": { "type": "file", "path": "C:\\Users\\me\\Videos\\바다로 가는 길_완성본.mp4" }, "launchLabel": "완성 영상",
+      "moreLaunches": [
+        { "label": "유튜브", "launch": { "type": "url", "url": "https://www.youtube.com/" } },
+        { "label": "결과물 폴더", "launch": { "type": "file", "path": "C:\\Users\\me\\Videos" } }
+      ], "thumbnailFile": "thumbs/video.png" },
+    { "name": "사진 정리 도구", "description": "WSL에서 도는 서버 앱 (npm start)", "category": "도구",
+      "launch": { "type": "wsl", "command": "npm start", "cwd": "/home/me/projects/photo-sorter", "window": "new" }, "thumbnailFile": "thumbs/photo.png" },
+    { "name": "포트폴리오", "description": "배포판과 로컬 개발판을 한 카드에", "category": "개발",
+      "launch": { "type": "url", "url": "https://example.com/portfolio" }, "launchLabel": "배포판",
+      "moreLaunches": [{ "label": "로컬판", "launch": { "type": "url", "url": "http://localhost:5173" } }], "thumbnailFile": "thumbs/portfolio.png" },
+    { "name": "회의록 요약 에이전트", "description": "크롬에 설치한 웹앱(PWA)을 앱 창으로", "category": "에이전트",
+      "launch": { "type": "chrome-app", "appId": "abcdefghijklmnopabcdefghijklmnop", "profile": "Default", "url": "https://example.com/meeting" }, "thumbnailFile": "thumbs/meeting.png" },
+    { "name": "독서 기록", "description": "GitHub에서 가져왔지만 아직 실행 방법을 모르는 카드", "category": "",
+      "launch": { "type": "url", "url": "" }, "needsReview": true }
+  ]
+}

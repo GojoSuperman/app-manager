@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>날씨 대시보드 (예시)</title>
+<style>
+body { margin: 0; min-height: 100vh; font-family: system-ui, "Malgun Gothic", sans-serif; color: #fff; background: linear-gradient(160deg, #2b6cb0, #63b3ed 60%, #bee3f8); }
+main { max-width: 980px; margin: 0 auto; padding: 48px 28px; }
+h1 { margin: 0; font-size: 28px; opacity: .9; }
+.now { display: flex; align-items: center; gap: 28px; margin: 28px 0 36px; }
+.now .temp { font-size: 96px; font-weight: 800; line-height: 1; }
+.now .icon { font-size: 92px; }
+.now .desc { font-size: 22px; opacity: .9; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; }
+.day { background: #ffffff2a; border-radius: 16px; padding: 16px 8px; text-align: center; backdrop-filter: blur(4px); }
+.day b { display: block; opacity: .85; } .day span { display: block; font-size: 34px; margin: 8px 0; } .day i { font-style: normal; font-weight: 700; }
+footer { margin-top: 36px; opacity: .7; font-size: 13px; }
+</style></head><body><main>
+<h1>📍 서울 · 오늘</h1>
+<div class="now"><div class="icon">⛅</div><div><div class="temp">23°</div><div class="desc">구름 조금 · 습도 48% · 바람 2m/s</div></div></div>
+<div class="week">
+<div class="day"><b>월</b><span>☀️</span><i>25°</i></div><div class="day"><b>화</b><span>⛅</span><i>23°</i></div><div class="day"><b>수</b><span>🌧️</span><i>19°</i></div>
+<div class="day"><b>목</b><span>🌦️</span><i>20°</i></div><div class="day"><b>금</b><span>☀️</span><i>24°</i></div><div class="day"><b>토</b><span>☀️</span><i>26°</i></div><div class="day"><b>일</b><span>⛅</span><i>24°</i></div>
+</div>
+<footer>예시 사이트 — 앱 관리 프로젝트의 '로컬 웹' 실행 방법 시연용 (실제 날씨 아님)</footer>
+</main></body></html>
