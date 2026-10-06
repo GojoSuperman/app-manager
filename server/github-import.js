@@ -42,31 +42,69 @@ function originMap(projectsRoot) {
     try {
       const conf = fs.readFileSync(path.join(projectsRoot, n, '.git', 'config'), 'utf8');
       const m = /\[remote "origin"\][^[]*?url\s*=\s*(\S+)/.exec(conf);
-      if (m) map.set(norm(m[1].replace(/^git@github\.com:/, 'https://github.com/')), path.join(projectsRoot, n));
+      if (m) {
+        // 같은 저장소를 가리키는 폴더가 여럿일 수 있다 (예: 앱 폴더와 그 앱의 챗봇 폴더 — 2026-10-06 실측)
+        const key = norm(m[1].replace(/^git@github\.com:/, 'https://github.com/'));
+        map.set(key, [...(map.get(key) || []), path.join(projectsRoot, n)]);
+      }
     } catch { /* git 폴더 아님 */ }
   }
   return map;
+}
+
+// 내려받은 폴더를 살펴 실행 방법 추측 (등록 스킬의 판단을 단순하게): { web, local } 또는 null
+// web: README의 배포 주소·package.json homepage → 웹 주소 / local: npm start·dev → WSL 명령, 정적 index.html → 로컬 웹
+// Godot·Windows 스크립트처럼 경로를 사람이 정해야 하는 것은 추측하지 않는다.
+const DEPLOY_HOSTS = /https:\/\/[\w.-]+\.(vercel\.app|netlify\.app|onrender\.com|github\.io|pages\.dev|railway\.app|up\.railway\.app|fly\.dev|herokuapp\.com|web\.app|firebaseapp\.com|streamlit\.app|hf\.space)(\/[^\s)\]"'<>*]*)?/i;
+
+const readText = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return null; } };
+
+export function guessLaunch(dir) {
+  if (!dir) return null;
+  let pkg = null;
+  try { pkg = JSON.parse(readText(path.join(dir, 'package.json')) || 'null'); } catch { /* 깨진 package.json */ }
+  let web = null;
+  const readme = ['README.md', 'readme.md', 'README.en.md'].map((f) => readText(path.join(dir, f))).find(Boolean);
+  const m = readme && DEPLOY_HOSTS.exec(readme);
+  if (m) web = { launch: { type: 'url', url: m[0].replace(/[*_.,;:!?]+$/, '') }, how: 'README의 배포 주소' }; // **굵은 글씨**·문장부호 떼기
+  else if (/^https?:\/\//.test(pkg?.homepage || '')) web = { launch: { type: 'url', url: pkg.homepage }, how: 'package.json homepage' };
+  let local = null;
+  const script = pkg?.scripts?.start ? 'npm start' : pkg?.scripts?.dev ? 'npm run dev' : null;
+  if (script) local = { launch: { type: 'wsl', command: script, cwd: dir, window: 'new' }, how: script };
+  else {
+    const site = ['', 'public', 'dist'].find((sub) => fs.existsSync(path.join(dir, sub, 'index.html')));
+    if (site !== undefined && !pkg) {
+      local = { launch: { type: 'local-web', dir: site ? path.join(dir, site) : dir, entry: 'index.html' }, how: `정적 사이트 (${site ? `${site}/` : ''}index.html)` };
+    }
+  }
+  return web || local ? { web, local } : null;
 }
 
 export function buildCandidates(repos, { projectsRoot, apps }) {
   const origins = originMap(projectsRoot);
   return repos.map((r) => {
     const byName = path.join(projectsRoot, r.name);
-    const localDir = origins.get(norm(r.url)) || (fs.existsSync(path.join(byName, '.git')) ? byName : null);
+    const dirs = [...(origins.get(norm(r.url)) || [])];
+    if (fs.existsSync(path.join(byName, '.git')) && !dirs.includes(byName)) dirs.push(byName);
+    const localDir = dirs.find((d) => path.basename(d) === r.name) || dirs[0] || null; // 저장소 이름과 같은 폴더 우선
     const homepage = r.homepageUrl || '';
-    const card = apps.find((a) => (localDir && a.sourceDir === localDir) || (homepage && a.launch?.url === homepage))?.name || null;
+    const card = apps.find((a) => (a.sourceDir && dirs.includes(a.sourceDir)) || (homepage && a.launch?.url === homepage))?.name || null;
     return {
       name: r.name, description: r.description || '', homepageUrl: homepage, url: r.url,
       private: !!r.isPrivate, fork: !!r.isFork, archived: !!r.isArchived, localDir, card,
+      guess: localDir ? guessLaunch(localDir) : null, // 추측한 실행은 미리 체크하지 않는다 (사람이 보고 고르게)
       checked: !!homepage && !card && !r.isArchived,
     };
   });
 }
 
 export function cardFromRepo(c) {
-  return {
-    name: c.name, description: c.description || '', category: '', sourceDir: c.localDir || null,
-    launch: { type: 'url', url: c.homepageUrl || '' },
-    needsReview: !c.homepageUrl, // 실행 방법을 모르면 '확인 필요' — 수정 창이나 등록 스킬로 채운다
-  };
+  const base = { name: c.name, description: c.description || '', category: '', sourceDir: c.localDir || null };
+  // 배포 주소: GitHub 웹사이트 주소 우선, 없으면 README·homepage에서 찾은 것
+  const web = c.homepageUrl ? { type: 'url', url: c.homepageUrl } : c.guess?.web?.launch || null;
+  const local = c.guess?.local?.launch || null;
+  if (web && local) return { ...base, launch: web, needsReview: false, launchLabel: '배포판', moreLaunches: [{ label: '로컬판', launch: local }] };
+  if (web || local) return { ...base, launch: web || local, needsReview: false };
+  // 실행 방법을 모르면 '확인 필요' — 수정 창이나 등록 스킬로 채운다
+  return { ...base, launch: { type: 'url', url: '' }, needsReview: true };
 }

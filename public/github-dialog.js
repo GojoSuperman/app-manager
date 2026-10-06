@@ -13,7 +13,7 @@ export async function openGithubImport({ onDone }) {
   box.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
   box.append(
     el('h3', {}, '⬇ GitHub에서 가져오기'),
-    el('p', { className: 'hint' }, '카드로 만들 저장소를 고르세요. 웹사이트 주소가 있으면 바로 실행되는 카드, 없으면 "확인 필요" 카드가 돼요 (✎ 수정이나 등록 스킬로 실행 방법을 채우면 돼요).'),
+    el('p', { className: 'hint' }, '카드로 만들 저장소를 고르세요. 웹사이트 주소가 있거나, 내 PC의 폴더에서 실행 방법을 찾으면(🔎 추측) 바로 실행되는 카드가 돼요. 못 찾으면 "확인 필요" 카드가 되고, ✎ 수정이나 등록 스킬로 채우면 돼요.'),
     list, status,
     el('div', { className: 'btns' }, count, el('button', { type: 'button', onclick: close }, '닫기'), okBtn));
   document.body.append(box);
@@ -27,13 +27,17 @@ export async function openGithubImport({ onDone }) {
     count.textContent = `${n}개 고름`;
     okBtn.disabled = n === 0;
   };
-  // 아직 카드 없는 것 먼저, 그다음 이미 카드 있는 것
-  const rows = [...r.candidates].sort((a, b) => (!!a.card - !!b.card) || (!!b.homepageUrl - !!a.homepageUrl) || a.name.localeCompare(b.name, 'ko'));
+  // 아직 카드 없는 것 먼저 → 웹사이트 → 추측 가능 → 확인 필요 순, 그다음 이미 카드 있는 것
+  const rank = (c) => (c.card ? 9 : c.homepageUrl ? 0 : c.guess ? 1 : 2);
+  const rows = [...r.candidates].sort((a, b) => (rank(a) - rank(b)) || a.name.localeCompare(b.name, 'ko'));
   list.replaceChildren(...rows.map((c) => {
     const cb = el('input', { type: 'checkbox', checked: c.checked, disabled: !!c.card, onchange: update });
     checks.set(c.name, cb);
     const tags = [
-      c.homepageUrl ? el('span', { className: 'tag ok', 'data-tip': c.homepageUrl }, '🌐 웹사이트') : el('span', { className: 'tag', 'data-tip': '실행 방법을 몰라 "확인 필요" 카드가 돼요' }, '확인 필요'),
+      c.homepageUrl ? el('span', { className: 'tag ok', 'data-tip': c.homepageUrl }, '🌐 웹사이트') : null,
+      !c.homepageUrl && c.guess?.web ? el('span', { className: 'tag ok', 'data-tip': `${c.guess.web.how}: ${c.guess.web.launch.url} (추측 — 맞는지 확인해 주세요)` }, '🔎 웹 주소') : null,
+      c.guess?.local ? el('span', { className: 'tag ok', 'data-tip': `내 PC 폴더에서 찾은 실행 방법 (추측): ${c.guess.local.how}${c.homepageUrl || c.guess.web ? ' — 배포판·로컬판 두 실행으로 담아요' : ''}` }, `🔎 로컬: ${c.guess.local.how}`) : null,
+      !c.homepageUrl && !c.guess ? el('span', { className: 'tag', 'data-tip': '실행 방법을 몰라 "확인 필요" 카드가 돼요' }, '확인 필요') : null,
       c.localDir ? el('span', { className: 'tag', 'data-tip': c.localDir }, '📁 내 PC에 있음') : null,
       c.private ? el('span', { className: 'tag' }, '비공개') : null,
       c.archived ? el('span', { className: 'tag' }, '보관됨') : null,

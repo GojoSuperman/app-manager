@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { listRepos, buildCandidates, cardFromRepo } from '../server/github-import.js';
+import { listRepos, buildCandidates, cardFromRepo, guessLaunch } from '../server/github-import.js';
 
 const repo = (name, extra = {}) => ({ name, description: '', homepageUrl: '', isPrivate: false, isFork: false, isArchived: false, url: `https://github.com/me/${name}`, ...extra });
 
@@ -36,6 +36,7 @@ test('buildCandidates: 내려받은 폴더(이름 또는 origin 주소로)·이�
   assert.equal(by.tool.localDir, path.join(root, 'renamed-folder'));
   assert.equal(by.done.card, '이미');
   assert.deepEqual([by.site.checked, by.tool.checked, by.done.checked, by.old.checked], [true, false, false, false]);
+  assert.equal(by.tool.guess, null); // 폴더는 있지만 실행할 단서 없음
   assert.equal(by.old.archived, true);
 });
 
@@ -44,4 +45,57 @@ test('cardFromRepo: 웹사이트 있으면 웹 주소 카드, 없으면 확인 �
     { name: 'site', description: '내 사이트', category: '', sourceDir: '/p/site', launch: { type: 'url', url: 'https://site.dev' }, needsReview: false });
   assert.deepEqual(cardFromRepo({ name: 'tool', description: '', homepageUrl: '', localDir: null }),
     { name: 'tool', description: '', category: '', sourceDir: null, launch: { type: 'url', url: '' }, needsReview: true });
+});
+
+const mk = (files) => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'mal-guess-'));
+  for (const [f, c] of Object.entries(files)) { fs.mkdirSync(path.dirname(path.join(d, f)), { recursive: true }); fs.writeFileSync(path.join(d, f), c); }
+  return d;
+};
+
+test('guessLaunch: README 배포 주소 > package.json homepage > npm start/dev > 정적 index.html, 못 정하면 null', () => {
+  const a = mk({ 'README.md': '# 앱\n데모: https://my-app.vercel.app/ 그리고 https://github.com/x/y', 'package.json': '{"scripts":{"dev":"vite"}}' });
+  assert.deepEqual(guessLaunch(a), {
+    web: { launch: { type: 'url', url: 'https://my-app.vercel.app/' }, how: 'README의 배포 주소' },
+    local: { launch: { type: 'wsl', command: 'npm run dev', cwd: a, window: 'new' }, how: 'npm run dev' },
+  });
+  const b = mk({ 'package.json': '{"homepage":"https://me.github.io/b","scripts":{"start":"node s.js","dev":"x"}}' });
+  assert.deepEqual(guessLaunch(b).web.launch, { type: 'url', url: 'https://me.github.io/b' });
+  assert.equal(guessLaunch(b).local.how, 'npm start');
+  const c = mk({ 'public/index.html': '<h1>x</h1>' });
+  assert.deepEqual(guessLaunch(c), { web: null, local: { launch: { type: 'local-web', dir: path.join(c, 'public'), entry: 'index.html' }, how: '정적 사이트 (public/index.html)' } });
+  assert.equal(guessLaunch(mk({ 'project.godot': '' })), null);
+  assert.equal(guessLaunch(mk({ 'README.md': '그냥 설명' })), null);
+  assert.equal(guessLaunch(null), null);
+});
+
+test('cardFromRepo: 웹사이트 + 로컬 추측이면 배포판·로컬판 한 카드, 로컬 추측만 있으면 그것으로', () => {
+  const local = { launch: { type: 'wsl', command: 'npm start', cwd: '/p/a', window: 'new' }, how: 'npm start' };
+  assert.deepEqual(cardFromRepo({ name: 'a', description: '', homepageUrl: 'https://a.dev', localDir: '/p/a', guess: { web: null, local } }), {
+    name: 'a', description: '', category: '', sourceDir: '/p/a', launch: { type: 'url', url: 'https://a.dev' }, needsReview: false,
+    launchLabel: '배포판', moreLaunches: [{ label: '로컬판', launch: local.launch }],
+  });
+  assert.deepEqual(cardFromRepo({ name: 'b', description: '', homepageUrl: '', localDir: '/p/b', guess: { web: null, local } }), {
+    name: 'b', description: '', category: '', sourceDir: '/p/b', launch: local.launch, needsReview: false,
+  });
+  // README에서 찾은 배포 주소는 웹사이트 주소처럼 쓴다
+  const web = { launch: { type: 'url', url: 'https://c.vercel.app' }, how: 'README의 배포 주소' };
+  assert.equal(cardFromRepo({ name: 'c', description: '', homepageUrl: '', localDir: '/p/c', guess: { web, local: null } }).launch.url, 'https://c.vercel.app');
+});
+
+test('buildCandidates: 같은 저장소를 가리키는 폴더가 여럿이면 이름이 같은 폴더 우선, 그중 하나라도 카드가 있으면 카드 있음', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mal-gh2-'));
+  for (const d of ['map', 'map-chatbot']) {
+    fs.mkdirSync(path.join(root, d, '.git'), { recursive: true });
+    fs.writeFileSync(path.join(root, d, '.git', 'config'), '[remote "origin"]\n\turl = https://github.com/me/map\n');
+  }
+  const [c] = buildCandidates([repo('map')], { projectsRoot: root, apps: [{ name: '지도', sourceDir: path.join(root, 'map'), launch: { type: 'url', url: 'https://x' } }] });
+  assert.deepEqual([c.localDir, c.card], [path.join(root, 'map'), '지도']);
+  const [d] = buildCandidates([repo('map')], { projectsRoot: root, apps: [{ name: '챗봇', sourceDir: path.join(root, 'map-chatbot'), launch: { type: 'url', url: 'https://y' } }] });
+  assert.equal(d.card, '챗봇');
+});
+
+test('guessLaunch: README 주소 끝의 굵은 글씨 표시·문장부호는 떼기', () => {
+  const d = mk({ 'README.md': '**데모**: **https://me.github.io/hotel/viewer.html**. 끝' });
+  assert.equal(guessLaunch(d).web.launch.url, 'https://me.github.io/hotel/viewer.html');
 });

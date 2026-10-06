@@ -73,7 +73,7 @@ Then double-click the desktop icon. Detailed steps and troubleshooting are in th
 | **⬇ GitHub에서 가져오기** (Import from GitHub) | Pick from your GitHub repositories in one go (requires `gh` login) |
 | **Registration skill** (Claude Code) | Tell Claude Code "앱 관리 프로젝트에 등록해줘" in a project folder — it inspects the project and fills in how to run it |
 
-When importing from GitHub, a repository with a **website URL** becomes a ready-to-run card. Otherwise it becomes a **"확인 필요"** (needs review) card; fill in how to run it later with ✎ (edit) or the registration skill.
+When importing from GitHub, a repository with a **website URL** becomes a ready-to-run card. If you have a local clone, App Manager **guesses** how to run it (🔎 a deploy URL in the README, `npm start` / `npm run dev`, or a static `index.html`). With both a web URL and a local run, the card gets two launches: **배포판** (deployed) and **로컬판** (local). If nothing is found it becomes a **"확인 필요"** (needs review) card; fill it in later with ✎ (edit) or the registration skill.
 
 ### Six launch types
 
