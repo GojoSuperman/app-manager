@@ -96,7 +96,9 @@ gh auth login
 
 > 앱 관리 프로젝트에 등록해줘
 
-Claude Code 설정 폴더를 여러 개 쓴다면(`CLAUDE_CONFIG_DIR`), 그 폴더마다 한 번씩 실행하세요.
+설치·갱신한 뒤에는 Claude Code에서 **새 대화**를 열어야 스킬이 보입니다.
+
+다른 설정 폴더에도 넣으려면 화면 위 **🧩 등록 스킬** 버튼에서 폴더를 골라 설치하세요. 터미널로 하려면 `CLAUDE_CONFIG_DIR`를 지정해 실행합니다.
 
 ```bash
 CLAUDE_CONFIG_DIR=~/.claude-다른계정 SKIP_NPM=1 SKIP_SHORTCUT=1 bash scripts/setup.sh
@@ -112,7 +114,8 @@ CLAUDE_CONFIG_DIR=~/.claude-다른계정 SKIP_NPM=1 SKIP_SHORTCUT=1 bash scripts
 | "포트 4790을 다른 프로그램이 쓰고 있어요" | 그 프로그램을 끄거나 `MY_APP_LAUNCHER_PORT=4800 bash scripts/launch.sh`처럼 다른 포트로 |
 | "Windows 연동(WSL interop)이 꺼져 있어…" | `/etc/wsl.conf`의 `[interop] enabled=false`를 지우고 PowerShell에서 `wsl --shutdown` 후 다시 열기 |
 | 자동 캡처·크롬 앱이 "크롬을 찾지 못했어요" | 크롬을 설치하거나, `~/.config/my-app-launcher/config.json`에 `"chromeDir": "C:\\…\\Chrome\\Application"`을 적기 |
-| 업데이트했는데 새 기능이 안 보임 | 서버 코드가 바뀐 경우 **런처 종료** 후 아이콘으로 다시 켜기. 화면만 바뀐 경우 Ctrl+Shift+R |
+| 업데이트했는데 새 기능이 안 보임 | ⟳ 업데이트 창의 **지금 다시 켜기**를 눌렀는지 확인. 터미널로 받았다면 **런처 종료** 후 아이콘으로 다시 켜기 |
+| ⟳ 업데이트가 "고친 파일이 있어서 받지 않았어요" | 런처 폴더의 파일을 직접 고친 경우입니다. `git status`로 확인하고, 필요 없으면 `git checkout -- .`으로 되돌린 뒤 다시 시도 |
 | 다운로드 폴더 찾아보기가 1~2초 걸림 | 정상입니다. WSL이 직접 못 읽는 Windows 폴더는 Windows로 목록을 대신 읽어서 조금 느립니다 |
 
 ## 지우기

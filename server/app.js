@@ -8,6 +8,8 @@ import { createSecurity } from './security.js';
 import { allLaunches } from './app-schema.js';
 import { listDir, toWinPath, browseRoots } from './browse.js';
 import { listRepos, buildCandidates, cardFromRepo } from './github-import.js';
+import { listTargets, summarize, installSkill } from './skill-install.js';
+import { checkUpdate as checkUpdateDefault, runUpdate as runUpdateDefault } from './updater.js';
 import { wrapPs } from './launch-plan.js';
 import { psQuote } from './wincmd.js';
 import { decodeDataUrl, saveThumbnail, captureThumbnail } from './thumbs.js';
@@ -33,6 +35,11 @@ export function createApp({
   projectsRoot = path.join(os.homedir(), 'projects'), // 앱 추가 창에서 고를 프로젝트 폴더들의 상위 폴더
   usersDir = '/mnt/c/Users', // 찾아보기 바로가기(다운로드·바탕화면·문서)를 찾을 Windows 사용자 폴더
   listGithubRepos = listRepos,
+  skillHome = os.homedir(), skillEnv = process.env, // 등록 스킬을 설치할 Claude 설정 폴더 찾기
+  skillFile = path.join(import.meta.dirname, '..', 'skill', 'register-to-launcher', 'SKILL.md'),
+  repoDir = path.join(import.meta.dirname, '..'), // 업데이트할 런처 저장소
+  checkUpdate = (dir) => checkUpdateDefault(dir), runUpdate = (dir) => runUpdateDefault(dir),
+  onRestart = () => {},
 }) {
   const app = express();
   const sec = createSecurity({ token, getPort });
@@ -124,6 +131,15 @@ export function createApp({
     }
     res.json({ ok: true, added, skipped });
   });
+  // 등록 스킬 설치·갱신 (setup.sh ④단계를 버튼으로)
+  app.get('/api/skill', (req, res) => {
+    const targets = listTargets({ home: skillHome, env: skillEnv, skillFile });
+    res.json({ ok: true, summary: summarize(targets), targets });
+  });
+  app.post('/api/skill/install', (req, res) => {
+    const r = installSkill({ home: skillHome, env: skillEnv, skillFile, dirs: req.body?.dirs });
+    return r.ok ? res.json(r) : fail(res, 400, r.error);
+  });
   app.post('/api/categories', (req, res) => fromStore(res, store.addCategory(req.body?.name), (r) => ({ categories: r.categories })));
   app.delete('/api/categories/:name', (req, res) => fromStore(res, store.removeCategory(req.params.name), (r) => ({ categories: r.categories })));
   app.post('/api/tab-order', (req, res) => fromStore(res, store.writeTabOrder(req.body?.names), (r) => ({ tabOrder: r.tabOrder })));
@@ -150,6 +166,13 @@ export function createApp({
     res.json({ ok: true, thumbnail: saveThumbnail(store, a.id, d.buf, d.ext) });
   }));
   app.post('/api/apps/:id/open-folder', withApp(async (a, req, res) => res.json(launchResult(await launcher.openFolder(a)))));
+  // ⟳ 업데이트: GitHub의 새 판 확인 → pull --ff-only + npm install → 다시 켜기
+  app.get('/api/update/check', async (req, res) => res.json(await checkUpdate(repoDir)));
+  app.post('/api/update', async (req, res) => res.json(await runUpdate(repoDir)));
+  app.post('/api/restart', (req, res) => {
+    res.json({ ok: true });
+    setImmediate(onRestart);
+  });
   app.post('/api/shutdown', (req, res) => {
     res.json({ ok: true });
     setImmediate(onShutdown);

@@ -1,6 +1,7 @@
 // server/index.js
 // 런처 시작점. 바탕화면 아이콘 → scripts/launch.sh → 이 파일 (독립 창에서 실행, Claude 세션 시간 제한과 무관).
 import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
@@ -42,6 +43,28 @@ const store = createStore(home);
 const launcher = createLauncher({ home, config: readConfig(home), distro, localWebBase, echo: (line) => console.log(`${stamp()} ${line}`) });
 let mainServer;
 let webServer;
+// 업데이트 뒤 다시 켜기: 포트를 다 닫은 뒤 새 코드로 서버를 분리해 띄우고(launch.sh와 같은 방식, 브라우저는 안 엶) 이 서버는 끝낸다.
+// 열려 있던 화면은 새 서버가 응답하면 스스로 새로고침한다.
+function restart() {
+  log('업데이트를 적용하려고 런처를 다시 켭니다');
+  app.locals.close();
+  const servers = [mainServer, webServer].filter(Boolean);
+  let left = servers.length;
+  const relaunch = () => {
+    const out = fs.openSync(path.join(dataPaths(home).logs, 'server.out'), 'a');
+    const child = spawn(process.execPath, [path.join(import.meta.dirname, 'index.js')], {
+      cwd: path.join(import.meta.dirname, '..'), detached: true, stdio: ['ignore', out, out], env: process.env,
+    });
+    child.unref();
+    setTimeout(() => process.exit(0), 200).unref();
+  };
+  for (const s of servers) {
+    s.closeAllConnections();
+    s.close(() => { if (--left === 0) relaunch(); });
+  }
+  if (!servers.length) relaunch();
+}
+
 function shutdown() {
   log('런처를 끕니다');
   app.locals.close();
@@ -61,7 +84,7 @@ const idle = createIdleShutdown({
   },
 });
 const projectsRoot = process.env.MY_APP_LAUNCHER_PROJECTS_ROOT || path.join(os.homedir(), 'projects');
-const app = createApp({ store, launcher, token, getPort: () => port, localWebBase, onShutdown: shutdown, consoleStream, idle, projectsRoot });
+const app = createApp({ store, launcher, token, getPort: () => port, localWebBase, onShutdown: shutdown, onRestart: restart, consoleStream, idle, projectsRoot });
 const webApp = createLocalWebApp({ store, getPort: () => webPort });
 
 // 이미 떠 있는 게 이 런처인지 (남의 프로그램이면 열지 않는다)

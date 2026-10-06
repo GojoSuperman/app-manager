@@ -6,6 +6,8 @@ import { chipList, filterApps, mergeOrder, canReorder, categoryColors, labelOpti
 import { openDialog } from './dialog.js';
 import './tooltip.js';
 import { openGithubImport } from './github-dialog.js';
+import { openSkillDialog, refreshSkillButton } from './skill-dialog.js';
+import { openUpdateDialog, refreshUpdateButton } from './update-dialog.js';
 
 const $ = (s) => document.querySelector(s);
 const state = { apps: [], order: [], categories: [], tabOrder: [], labels: [], colors: {}, addingCategory: false, chip: 'all', query: '', errors: new Map(), busy: new Set() };
@@ -314,6 +316,10 @@ async function moveToCategory(a, category, { undo = true } = {}) {
 $('#search').addEventListener('input', (e) => { state.query = e.target.value; render(); });
 $('#add').addEventListener('click', () => openDialog({ app: null, ...dialogOpts() }));
 $('#quit').addEventListener('click', quit);
+$('#skill').addEventListener('click', () => openSkillDialog({ onDone: (msg) => { toast(msg); refreshSkillButton($('#skill')); } }));
+refreshSkillButton($('#skill'));
+$('#update').addEventListener('click', () => openUpdateDialog());
+refreshUpdateButton($('#update'));
 $('#gh-import').addEventListener('click', () => openGithubImport({ onDone: (msg) => { toast(msg); load(); } }));
 new EventSource('/api/events').addEventListener('apps', load);
 

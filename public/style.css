@@ -154,4 +154,14 @@ dialog.gh-import { width: min(720px, 94vw); }
 .tag { font-size: 11px; padding: 1px 7px; border-radius: 10px; background: var(--field); color: var(--muted); white-space: nowrap; }
 .tag.ok { color: #9be39b; } .tag.done { color: var(--chip-on); }
 dialog.gh-import .btns { align-items: center; } dialog.gh-import .btns .hint { margin-right: auto; }
+dialog.skill-dlg { width: min(600px, 94vw); }
+.skill-list { margin: 10px 0; }
+.skill-row { display: flex !important; gap: 10px; align-items: center; padding: 7px 8px; margin: 0 !important; border-radius: 6px; cursor: pointer; color: var(--text) !important; font-size: 14px !important; }
+.skill-row:hover { background: var(--field); }
+.skill-row input { width: auto; flex: none; }
+.skill-row code { flex: 1; }
+.tag.warn { color: var(--chip-on); }
+button.ghost.attention { color: var(--chip-on); border-color: var(--chip-on); }
+dialog.update-dlg { width: min(560px, 94vw); }
+.update-commits { margin: 6px 0 10px; padding-left: 20px; max-height: 220px; overflow: auto; font-size: 13px; color: var(--muted); }
 

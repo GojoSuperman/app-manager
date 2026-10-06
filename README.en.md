@@ -105,7 +105,9 @@ For Open file, type the path or use **📄 파일 선택 / 📁 폴더 선택** 
 
 The skill only **reads** the README, `package.json`, run scripts and deploy settings to decide how to run the project, shows you a draft card, and registers it **only after you confirm**. Registering the same project again updates its card instead of creating a duplicate.
 
-If you use several Claude Code config folders, install for each: `CLAUDE_CONFIG_DIR=~/.claude-other bash scripts/setup.sh`
+You can also install or update it with the **🧩 등록 스킬** (registration skill) button at the top. It lists `~/.claude` and `~/.claude-*` folders with their state (최신 = up to date, 옛 판 = outdated, 미설치 = not installed) and installs into the ones you pick. When an update changes the skill, the button turns into **🧩 스킬 업데이트** (update skill).
+
+> Claude Code reads skills when a conversation starts. After installing or updating, open a **new conversation**.
 
 ## Requirements
 
@@ -141,13 +143,12 @@ Set `MY_APP_LAUNCHER_HOME` to use another folder.
 
 ## Updating
 
-```bash
-cd ~/app-manager
-git pull
-npm install
-```
+When a new version is pushed to GitHub, the top button turns into **⟳ 업데이트 (N)** (update). Click it, then **업데이트 받기** (get update) → **지금 다시 켜기** (restart now).
 
-If server code changed, click **런처 종료** (quit launcher) and reopen from the desktop icon. For screen-only changes, Ctrl+Shift+R in the browser is enough. Re-run `bash scripts/setup.sh` to update the registration skill too.
+- Getting the update runs `git pull --ff-only` + `npm install`. If it would overwrite files you changed on this PC, or the history diverged, it **changes nothing** and tells you why.
+- Restart relaunches the server with the new code and reloads the page.
+
+From the terminal: `cd ~/app-manager && git pull && npm install`, then click **런처 종료** (quit launcher) and reopen from the desktop icon. If the registration skill changed, the top button turns into **🧩 스킬 업데이트** (update skill) — click it to update.
 
 ## Tests
 

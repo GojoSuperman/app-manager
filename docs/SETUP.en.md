@@ -98,7 +98,9 @@ After logging in, click **⬇ GitHub에서 가져오기** at the top to get a ch
 
 > 앱 관리 프로젝트에 등록해줘
 
-("Register this in App Manager.") If you use several Claude Code config folders (`CLAUDE_CONFIG_DIR`), run once per folder:
+("Register this in App Manager.") After installing or updating, open a **new conversation** in Claude Code so it picks up the skill.
+
+To add it to other config folders, use the **🧩 등록 스킬** (registration skill) button at the top and pick the folders. From the terminal, set `CLAUDE_CONFIG_DIR`:
 
 ```bash
 CLAUDE_CONFIG_DIR=~/.claude-other SKIP_NPM=1 SKIP_SHORTCUT=1 bash scripts/setup.sh
@@ -114,7 +116,8 @@ CLAUDE_CONFIG_DIR=~/.claude-other SKIP_NPM=1 SKIP_SHORTCUT=1 bash scripts/setup.
 | "포트 4790을 다른 프로그램이 쓰고 있어요" (port 4790 in use) | Stop that program, or use another port: `MY_APP_LAUNCHER_PORT=4800 bash scripts/launch.sh` |
 | "Windows 연동(WSL interop)이 꺼져 있어…" (WSL interop is off) | Remove `[interop] enabled=false` from `/etc/wsl.conf`, then `wsl --shutdown` in PowerShell and reopen |
 | Auto-capture / Chrome app says "크롬을 찾지 못했어요" (Chrome not found) | Install Chrome, or add `"chromeDir": "C:\\…\\Chrome\\Application"` to `~/.config/my-app-launcher/config.json` |
-| New features don't show after updating | If server code changed, quit the launcher and reopen from the icon. For screen-only changes, Ctrl+Shift+R |
+| New features don't show after updating | Make sure you clicked **지금 다시 켜기** (restart now) in the ⟳ update dialog. If you pulled from the terminal, quit the launcher and reopen from the icon |
+| ⟳ update says "고친 파일이 있어서 받지 않았어요" (you changed files) | You edited files in the launcher folder. Check with `git status`; if you don't need the changes, `git checkout -- .` and try again |
 | Browsing the Downloads folder takes 1–2 s | Expected. Windows folders WSL can't read directly are listed through Windows instead |
 
 ## Uninstall

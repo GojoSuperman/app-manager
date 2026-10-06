@@ -201,6 +201,33 @@ test('GitHub에서 가져오기: gh 안내 오류는 그대로 전달', async (t
   assert.match(r.json.error, /로그인/);
 });
 
+test('등록 스킬: GET /api/skill 상태, POST /api/skill/install 설치', async (t) => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'mal-skhome-'));
+  fs.mkdirSync(path.join(home, '.claude'));
+  const skillFile = path.join(home, 'SKILL.md');
+  fs.writeFileSync(skillFile, 'S');
+  const { api } = await setup(t, { skillHome: home, skillEnv: {}, skillFile });
+  const r = (await api('GET', '/api/skill')).json;
+  assert.deepEqual([r.summary, r.targets.length], ['missing', 1]);
+  assert.deepEqual((await api('POST', '/api/skill/install', { dirs: [path.join(home, '.claude')] })).json, { ok: true, installed: [path.join(home, '.claude')] });
+  assert.equal((await api('GET', '/api/skill')).json.summary, 'current');
+  assert.equal((await api('POST', '/api/skill/install', { dirs: ['/etc'] })).status, 400);
+});
+
+test('업데이트: 확인·실행·다시 켜기', async (t) => {
+  const restarts = [];
+  const { api } = await setup(t, {
+    checkUpdate: async () => ({ ok: true, behind: 2, commits: ['a 새 기능', 'b 수정'] }),
+    runUpdate: async () => ({ ok: true, changed: true, behind: 2 }),
+    onRestart: () => restarts.push(1),
+  });
+  assert.deepEqual((await api('GET', '/api/update/check')).json, { ok: true, behind: 2, commits: ['a 새 기능', 'b 수정'] });
+  assert.deepEqual((await api('POST', '/api/update')).json, { ok: true, changed: true, behind: 2 });
+  assert.deepEqual((await api('POST', '/api/restart')).json, { ok: true });
+  await new Promise((r) => setImmediate(r));
+  assert.equal(restarts.length, 1);
+});
+
 test('원본 폴더·종료', async (t) => {
   const { api, calls } = await setup(t);
   const { id } = (await api('POST', '/api/apps', web('a'))).json.app;
